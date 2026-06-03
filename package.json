@@ -1,0 +1,16 @@
+{
+  "name": "my-hono-app",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "hono": "^4.12.23"
+  },
+  "devDependencies": {
+    "@hono/vite-dev-server": "^0.13.0",
+    "@types/bun": "latest",
+    "vite": "^5.0.0",
+    "wrangler": "^4.97.0"
+  }
+}
