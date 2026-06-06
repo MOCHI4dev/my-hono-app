@@ -114,32 +114,33 @@ api.get("/calc", (c) => {
 api.get("/nanikore", (c) => {
   const pattern = "12345678901234567890";
 
-  return c.streaming(async (writer) => {
-    // Send SSE headers
-    c.header("Content-Type", "text/event-stream");
-    c.header("Cache-Control", "no-cache");
-    c.header("Connection", "keep-alive");
+  // Set SSE headers
+  c.header("Content-Type", "text/event-stream");
+  c.header("Cache-Control", "no-cache");
+  c.header("Connection", "keep-alive");
 
-    try {
-      let index = 0;
+  let index = 0;
+  const encoder = new TextEncoder();
 
-      // Stream numbers infinitely
-      while (true) {
+  // Create a readable stream that generates data continuously
+  const stream = new ReadableStream({
+    start(controller) {
+      const intervalId = setInterval(() => {
         const char = pattern[index % pattern.length];
         const data = `data: ${char}\n\n`;
-
-        await writer.write(data);
-
-        // Move to next character
+        controller.enqueue(encoder.encode(data));
         index++;
+      }, 100);
 
-        // Small delay to make streaming visible
-        await new Promise((resolve) => setTimeout(resolve, 100));
-      }
-    } catch (error) {
-      console.error("SSE streaming error:", error);
-    }
+      // Clean up on stream close
+      c.req.raw.signal?.addEventListener("abort", () => {
+        clearInterval(intervalId);
+        controller.close();
+      });
+    },
   });
+
+  return c.body(stream);
 });
 
 app.route("/api", api);
