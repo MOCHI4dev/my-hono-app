@@ -110,5 +110,37 @@ api.get("/calc", (c) => {
   });
 });
 
+// SSE endpoint for streaming numbers continuously
+api.get("/nanikore", (c) => {
+  const pattern = "12345678901234567890";
+
+  return c.streaming(async (writer) => {
+    // Send SSE headers
+    c.header("Content-Type", "text/event-stream");
+    c.header("Cache-Control", "no-cache");
+    c.header("Connection", "keep-alive");
+
+    try {
+      let index = 0;
+
+      // Stream numbers infinitely
+      while (true) {
+        const char = pattern[index % pattern.length];
+        const data = `data: ${char}\n\n`;
+
+        await writer.write(data);
+
+        // Move to next character
+        index++;
+
+        // Small delay to make streaming visible
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+    } catch (error) {
+      console.error("SSE streaming error:", error);
+    }
+  });
+});
+
 app.route("/api", api);
 export default app;
