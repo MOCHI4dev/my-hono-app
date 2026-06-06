@@ -1,0 +1,2 @@
+[install]
+lockfile = true # package-lock.json も一緒に生成する設定
