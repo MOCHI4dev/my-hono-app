@@ -43,51 +43,72 @@ api.get("/greeting/:name/:birth{[0-9]{4}}", (c) => {
   });
 });
 
-// GET endpoint for basic calculator operations
-// Supports addition (+), subtraction (-), multiplication (*), and division (/)
-// Note: To avoid URL encoding issues with slashes, alternative separators like "_" or "div" can be used,
-// but here we use the standard four mathematical symbols directly in the route pattern
-api.get(
-  "/calc/:firstnum{[0-9]{1,4}}/:op{[+\\-*/]}/:secnum{[0-9]{1,4}}",
-  (c) => {
-    const { firstnum, op, secnum } = c.req.param();
+// GET endpoint for basic calculator operations using query parameters
+// Usage: /api/calc?num1=10&op=+&num2=5
+api.get("/calc", (c) => {
+  const num1Str = c.req.query("num1");
+  const num2Str = c.req.query("num2");
+  const op = c.req.query("op");
 
-    // 1. Convert string parameters to numbers since URL parameters are strings
-    const num1 = Number(firstnum);
-    const num2 = Number(secnum);
-    let result = 0;
+  // Validate that all parameters are provided
+  if (!num1Str || !num2Str || !op) {
+    return c.json(
+      {
+        error: "Missing parameters. Required: num1, num2, op",
+        example: "/api/calc?num1=10&op=+&num2=5",
+      },
+      400,
+    );
+  }
 
-    // 2. Perform calculation based on the operator
-    switch (op) {
-      case "+":
-        result = num1 + num2;
-        break;
-      case "-":
-        result = num1 - num2;
-        break;
-      case "*":
-        result = num1 * num2;
-        break;
-      case "/":
-        // Check for division by zero - good practice for production code!
-        if (num2 === 0) {
-          return c.json({ error: "Cannot divide by zero" }, 400);
-        }
-        result = num1 / num2;
-        break;
-      default:
-        return c.json({ error: "Invalid operator" }, 400);
-    }
+  // Validate that num1 and num2 are valid numbers
+  const num1 = Number(num1Str);
+  const num2 = Number(num2Str);
 
-    // 3. Return the calculation result as JSON
-    return c.json({
-      firstnum: num1,
-      op: op,
-      secnum: num2,
-      result: result,
-    });
-  },
-);
+  if (isNaN(num1) || isNaN(num2)) {
+    return c.json({ error: "num1 and num2 must be valid numbers" }, 400);
+  }
+
+  // Validate that operator is one of the supported operators
+  if (!["+", "-", "*", "/"].includes(op)) {
+    return c.json(
+      {
+        error: "Invalid operator. Supported operators: +, -, *, /",
+      },
+      400,
+    );
+  }
+
+  let result = 0;
+
+  // Perform calculation based on the operator
+  switch (op) {
+    case "+":
+      result = num1 + num2;
+      break;
+    case "-":
+      result = num1 - num2;
+      break;
+    case "*":
+      result = num1 * num2;
+      break;
+    case "/":
+      // Check for division by zero - good practice for production code!
+      if (num2 === 0) {
+        return c.json({ error: "Cannot divide by zero" }, 400);
+      }
+      result = num1 / num2;
+      break;
+  }
+
+  // Return the calculation result as JSON
+  return c.json({
+    num1: num1,
+    op: op,
+    num2: num2,
+    result: result,
+  });
+});
 
 app.route("/api", api);
 export default app;
